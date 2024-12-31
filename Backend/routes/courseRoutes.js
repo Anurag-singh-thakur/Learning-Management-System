@@ -7,14 +7,15 @@ const {
     addCourseContent,
     deleteCourse,
     getCourseById,
-    getTrendingCourses
+    getTrendingCourses ,
+    enrollInCourse
 } = require('../controllers/courseController');
 const { protect, optionalProtect } = require('../middleware/auth');
 const Course = require('../models/Course');
 // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 const Enrollment = require('../models/Enrollment');
 const User = require('../models/User');
-const { enrollInCourse } = require('../controllers/courseController');
+// const { enrollInCourse } = require('../controllers/courseController');
 // Public routes
 router.get('/', async (req, res) => {
     try {
@@ -47,8 +48,7 @@ router.get('/instructor/courses', getInstructorCourses);
 router.post('/instructor/:courseId/content', addCourseContent);
 router.delete('/instructor/:courseId', deleteCourse);
 
-router.post('/courses/:courseId/enroll', protect, enrollInCourse);
+router.post('/:courseId/enroll', protect, enrollInCourse);
 
-// Removed the duplicate enroll route
 
 module.exports = router;

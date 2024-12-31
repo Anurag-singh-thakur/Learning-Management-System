@@ -2,6 +2,8 @@ const Course = require('../models/Course');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs').promises;
+const jwt = require('jsonwebtoken');
+// const stripe = require('stripe');
 const mongoose = require('mongoose'); // Added mongoose import
 const Enrollment = require('../models/Enrollment');
 // No selected code provided, so I'll suggest a general improvement for the entire code file
@@ -472,46 +474,72 @@ exports.getCourseById = async (req, res) => {
     }
 };
 
+
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// const jwt = require('jsonwebtoken');
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+// const jwt = require('jsonwebtoken');
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
+// const jwt = require('jsonwebtoken');
+// const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
+
 exports.enrollInCourse = async (req, res) => {
     const { courseId } = req.params;
-    const userId = req.user.id; // Get user ID from the request
+    const userId = req.user.id;
 
     try {
-        console.log('Request received for course ID:', courseId);
         const course = await Course.findById(courseId);
+
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
         // Check if the user is already enrolled
-        if (course.enrolledStudents.includes(userId)) {
+        const enrollment = await Enrollment.findOne({ course: courseId, user: userId });
+        if (enrollment) {
             return res.status(400).json({ message: 'User already enrolled in this course' });
         }
 
+        // Check if the user is the instructor of the course
+        if (course.instructor.toString() === userId) {
+            return res.status(400).json({ message: 'Instructors cannot enroll in their own courses' });
+        }
+
         if (course.isPaid) {
+            // Create a token for the success URL
+            const token = jwt.sign({ courseId, userId }, process.env.JWT_SECRET, { expiresIn: '1h' });
+
             // Create a Stripe checkout session
             const session = await stripe.checkout.sessions.create({
                 payment_method_types: ['card'],
                 line_items: [{
                     price_data: {
-                        currency: 'usd',
+                        currency: 'inr',
                         product_data: {
                             name: course.name,
                         },
-                        unit_amount: course.price * 100, // Price in cents
+                        unit_amount: course.price * 100, // Price in paise
                     },
                     quantity: 1,
                 }],
                 mode: 'payment',
-                success_url: `${process.env.FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-                cancel_url: `${process.env.FRONTEND_URL}/cancel`,
+                success_url: `${process.env.FRONTEND_URL}/courses/${courseId}/success?token=${token}`,
+                cancel_url: `${process.env.FRONTEND_URL}/courses/${courseId}/cancel`,
             });
 
-            return res.json({ clientSecret: session.id });
+            return res.json({ url: session.url });
         } else {
             // Enroll the user in the free course
-            course.enrolledStudents.push(userId);
-            await course.save();
+            const newEnrollment = new Enrollment({
+                course: courseId,
+                user: userId,
+                paymentStatus: 'completed'
+            });
+            await newEnrollment.save();
+
             return res.status(200).json({ message: 'Successfully enrolled in the free course' });
         }
     } catch (error) {

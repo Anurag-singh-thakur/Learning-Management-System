@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { useParams, Link, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 import { 
     AcademicCapIcon, 
     ClockIcon, 
@@ -10,6 +10,7 @@ import {
 import axiosInstance from '../lib/axios';
 import { toast } from 'react-hot-toast';
 import { useAuth } from '../context/AuthContext';
+import { jwtDecode } from "jwt-decode";
 
 const pageVariants = {
     initial: { opacity: 0, y: 20 },
@@ -33,6 +34,7 @@ const pageVariants = {
 
 const CourseDetails = () => {
     const { courseId } = useParams();
+    const navigate = useNavigate();
     const [course, setCourse] = useState(null);
     const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -54,6 +56,25 @@ const CourseDetails = () => {
 
         fetchCourseDetails();
     }, [courseId]);
+
+    useEffect(() => {
+        const token = new URLSearchParams(window.location.search).get('token');
+        if (token) {
+            try {
+                const decoded = jwt_decode(token); // Updated usage
+                if (decoded.courseId !== courseId || decoded.userId !== user.id) {
+                    throw new Error('Invalid token');
+                }
+            } catch (error) {
+                console.error('Invalid token:', error);
+                toast.error('Unauthorized access');
+                navigate('/');
+            }
+        } else {
+            toast.error('Unauthorized access');
+            navigate('/');
+        }
+    }, [courseId, user.id, navigate]);
 
     const getThumbnailUrl = (thumbnailPath) => {
         if (!thumbnailPath) return null;
@@ -181,7 +202,7 @@ const CourseDetails = () => {
                                 { 
                                     icon: <CurrencyDollarIcon className="w-6 h-6 text-green-400" />, 
                                     label: 'Price', 
-                                    value: course.isPaid ? `$${course.price}` : 'Free' 
+                                    value: course.isPaid ? `₹${course.price}` : 'Free' 
                                 }
                             ].map((stat, index) => (
                                 <motion.div 
@@ -208,7 +229,7 @@ const CourseDetails = () => {
                     <motion.div 
                         initial={{ opacity: 0, x: -50 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5, duration: 0.5 }}
+                        transition={{ delay: 0.5 , duration: 0.5 }}
                         className="bg-slate-800/50 p-6 rounded-2xl text-center"
                     >
                         {course.instructor && course.instructor.profilePicture && (
@@ -217,73 +238,33 @@ const CourseDetails = () => {
                                 animate={{ scale: 1, opacity: 1 }}
                                 transition={{ delay: 0.6, type: "spring", stiffness: 300 }}
                                 src={`http://localhost:3008${course.instructor.profilePicture}`} 
-                                alt={course.instructor.name} 
-                                className="w-32 h-32 mx-auto rounded-full object-cover border-4 border-cyan-500 mb-4" 
+                                alt={course.instructor.name || 'Instructor'} 
+                                className="w-24 h-24 rounded-full mx-auto mb-4 object-cover" 
                             />
                         )}
-                        <h3 className="text-2xl font-semibold text-cyan-400 mb-2">
-                            {course.instructor ? course.instructor.name : 'Unknown Instructor'}
-                        </h3>
-                        <p className="text-gray-400 mb-4">
-                            {course.instructor ? course.instructor.email : ''}
-                        </p>
-                        <div className="flex items-center justify-center space-x-2">
-                            <UserIcon className="w-5 h-5 text-gray-300" />
-                            <span className="text-sm text-gray-300">Course Instructor</span>
-                        </div>
+                        <h3 className="text-xl font-semibold">{course.instructor.name}</h3>
+                        <p className="text-gray-400">{course.instructor.bio}</p>
                     </motion.div>
 
                     {/* Course Content */}
                     <motion.div 
                         initial={{ opacity: 0, x: 50 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5, duration: 0.5 }}
+                        transition={{ delay: 0.6, duration: 0.5 }}
                         className="md:col-span-2 bg-slate-800/50 p-6 rounded-2xl"
                     >
-                        <h2 className="text-3xl font-semibold mb-6 text-cyan-400 flex items-center">
-                            <AcademicCapIcon className="w-8 h-8 mr-3 text-cyan-400" />
-                            Course Content
-                        </h2>
-                        {course.content && course.content.length > 0 ? (
-                            <motion.div 
-                                initial="hidden"
-                                animate="visible"
-                                variants={{
-                                    hidden: { opacity: 0 },
-                                    visible: { 
-                                        opacity: 1,
-                                        transition: {
-                                            delayChildren: 0.3,
-                                            staggerChildren: 0.1
-                                        }
-                                    }
-                                }}
-                                className="grid md:grid-cols-2 gap-4"
-                            >
-                                {course.content.map((item, index) => (
-                                    <motion.div 
-                                        key={index} 
-                                        variants={{
-                                            hidden: { opacity: 0, y: 20 },
-                                            visible: { 
-                                                opacity: 1, 
-                                                y: 0,
-                                                transition: { duration: 0.5 }
-                                            }
-                                        }}
-                                        className="bg-slate-900/50 p-4 rounded-lg border border-slate-700/50 hover:border-cyan-500 transition-all group"
-                                    >
-                                        <div className="flex items-start space-x-3">
-                                            <p className="text-gray-300 group-hover:text-white transition-colors">
-                                                • {item}
-                                            </p>
-                                        </div>
-                                    </motion.div>
-                                ))}
-                            </motion.div>
-                        ) : (
-                            <p className="text-gray-500 text-center">No content available</p>
-                        )}
+                        <h3 className="text-2xl font-semibold mb-4">Course Content</h3>
+                        <ul className="space-y-4">
+                            {course.content.map((item, index) => (
+                                <li key={index} className="bg-slate-900 p-4 rounded-lg flex items-center space-x-4">
+                                    <AcademicCapIcon className="w-6 h-6 text-cyan-400" />
+                                    <div>
+                                        <h4 className="text-lg font-semibold">{item.title}</h4>
+                                        <p className="text-gray-400">{item.type}</p>
+                                    </div>
+                                </li>
+                            ))}
+                        </ul>
                     </motion.div>
                 </div>
             </div>

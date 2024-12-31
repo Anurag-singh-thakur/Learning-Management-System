@@ -3,9 +3,6 @@ import React, { memo, useEffect, useState, } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import axiosInstance from '../lib/axios';
-// import { useAuth } from '../context/AuthContext';
-// import { useNavigate } from 'react-router-dom'; 
-import { FaFire } from 'react-icons/fa';
 import { loadStripe } from '@stripe/stripe-js';
 import {
     FaBook,
@@ -13,10 +10,49 @@ import {
     FaClock,
     FaSearch
 } from 'react-icons/fa';
+import axios from 'axios';
+const stripePromise = loadStripe('pk_test_51OvOiGSDBIx2UJzRcUorq7L5QgLbfFZOREu1GbPWjmEUfi7c67dNqJRyZSDOmCtFBAbZ02jLo3pxfYQgQZHI6xe400n5xyZbSc') ;
+
 const CourseCard = memo(({ course, index }) => {
     const navigate = useNavigate();
     // const { user } = useAuth();
-    const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+    // const [showEnrollmentModal, setShowEnrollmentModal] = useState(false);
+    const handleEnroll = async (course , navigate) => {
+        // const navigate = useNavigate(); 
+        
+            console.log('Course to enroll:', course); 
+            console.log('Course ID:', course._id); 
+        
+            try {
+                const response = await axios.post(`/api/courses/${course._id}/enroll`, {}, {
+                    headers: {
+                        Authorization: `Bearer ${localStorage.getItem('token')}` // Ensure the token is sent
+                    }
+                });
+        
+                if (course.isPaid) {
+                    // const { clientSecret } = response.data; 
+                    // const stripe = await stripePromise;
+                    // const { error } = await stripe.redirectToCheckout({ clientSecret });
+        
+                    // if (error) {
+                    //     console.error('Error redirecting to Stripe:', error);
+                    //     toast.error('Failed to redirect to payment');
+                    // } else {
+                    //     toast.success('Redirecting to payment...');
+                    // }
+        
+                    const {url} = response.data; 
+                    window.location.href = url;
+                } else {
+                    toast.success('Successfully enrolled in the free course!');
+                    navigate(`/courses/${course._id}`); // Redirect to CourseDetails page
+                }
+            } catch (error) {
+                console.error('Error during enrollment:', error);
+                toast.error('Enrollment failed: ' + (error.response?.data?.message || 'An error occurred'));
+            }
+        };
     console.log('Course Card ID:', course._id);
     const cardVariants = {
         hidden: {
@@ -97,9 +133,9 @@ const CourseCard = memo(({ course, index }) => {
                       
                     </div>
 
-                   <div className="fle">
+                   <div className="flex justify-between items-center">
                    <p className="text-slate-400 text-sm line-clamp-3 mb-4">  {course.description}</p>
-                   <p>{course.level}</p>
+                   <p className='text-slate-400 text-sm line-clamp-3 mb-4'>{course.level}</p>
                    </div>
                    
                     {/* Pricing and Duration */}
@@ -132,7 +168,7 @@ const CourseCard = memo(({ course, index }) => {
                         <motion.button
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
-                            onClick={()=>handleEnroll(course)} 
+                            onClick={()=>handleEnroll(course , navigate)} 
                             className="flex-1 py-3 rounded-full font-semibold transition-all duration-300 transform hover:-translate-y-1 shadow-lg bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white"
                         >
                             Enroll Now
@@ -141,47 +177,16 @@ const CourseCard = memo(({ course, index }) => {
                 </div>
             </motion.div>
 
-            {showEnrollmentModal && (
+            {/* {showEnrollmentModal && (
                 <EnrollmentModal 
                     course={course} 
                     onClose={() => setShowEnrollmentModal(false)} 
                 />
-            )}
+            )} */}
         </> 
     );
 });
-const stripePromise = loadStripe('pk_test_51OvOiGSDBIx2UJzRcUorq7L5QgLbfFZOREu1GbPWjmEUfi7c67dNqJRyZSDOmCtFBAbZ02jLo3pxfYQgQZHI6xe400n5xyZbSc') ;
-const handleEnroll = async (course) => {
-    console.log('Course to enroll:', course); // Log the entire course object
-    console.log('Course ID:', course._id); // Log the course ID
 
-    try {
-        const response = await axiosInstance.post(`/courses/${course._id}/enroll`, {}, {
-            headers: {
-                Authorization: `Bearer ${localStorage.getItem('token')}` // Ensure the token is sent
-            }
-        });
-
-        if (course.isPaid) {
-            const { clientSecret } = response.data; 
-            const stripe = await stripePromise;
-            const { error } = await stripe.redirectToCheckout({ clientSecret });
-
-            if (error) {
-                console.error('Error redirecting to Stripe:', error);
-                toast.error('Failed to redirect to payment');
-            } else {
-                toast.success('Redirecting to payment...');
-            }
-        } else {
-            toast.success('Successfully enrolled in the free course!');
-            navigate(`/courses/${course._id}`); // Redirect to CourseDetails page
-        }
-    } catch (error) {
-        console.error('Error during enrollment:', error);
-        toast.error('Enrollment failed: ' + (error.response?.data?.message || 'An error occurred'));
-    }
-};
 // const EnrollmentModal = ({ course, onClose }) => {
 //     const { user } = useAuth();
 //     const [isProcessing, setIsProcessing] = useState(false);
