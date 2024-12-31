@@ -93,6 +93,13 @@ const Navbar = () => {
                                     </Link>
                                 </>
                             )}
+                            <Link 
+                                to="/my-courses" 
+                                className="block px-4 py-2 text-sm text-slate-200 hover:bg-cyan-500/10 hover:text-cyan-400 transition-colors"
+                                onClick={() => setIsProfileMenuOpen(false)}
+                            >
+                                My Courses
+                            </Link>
                             <button 
                                 onClick={() => {
                                     handleLogout();

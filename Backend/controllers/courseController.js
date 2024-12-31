@@ -1,15 +1,13 @@
 const Course = require('../models/Course');
 const multer = require('multer');
+const toast  = require('react-hot-toast')
 const path = require('path');
 const fs = require('fs').promises;
 const jwt = require('jsonwebtoken');
-// const stripe = require('stripe');
-const mongoose = require('mongoose'); // Added mongoose import
+const mongoose = require('mongoose'); 
 const Enrollment = require('../models/Enrollment');
-// No selected code provided, so I'll suggest a general improvement for the entire code file
 const express = require('express')
 const app = express()
-// Add input validation for all API endpoints
 const validateInput = (req, res, next) => {
     if (!req.body) {
         return res.status(400).json({ message: 'Invalid request body' });
@@ -36,19 +34,16 @@ const validateInput = (req, res, next) => {
 // };
 
 
-// Consider using a more robust error handling mechanism
 const errorHandler = (error, req, res, next) => {
     console.error('Error:', error);
     res.status(500).json({ message: 'Internal Server Error' });
 };
 
-// Use the errorHandler middleware in the main application file
 app.use(errorHandler);
 
 
 
 const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-// Ensure directory exists
 const ensureDirectoryExists = async (dirPath) => {
     try {
         await fs.mkdir(dirPath, { recursive: true });
@@ -57,7 +52,6 @@ const ensureDirectoryExists = async (dirPath) => {
     }
 };
 
-// Configure multer for file upload
 const storage = multer.diskStorage({
     destination: function (req, file, cb) {
         cb(null, 'uploads/');
@@ -69,12 +63,10 @@ const storage = multer.diskStorage({
 
 const upload = multer({ storage: storage });
 
-// Configure multer for thumbnail upload
 const thumbnailStorage = multer.diskStorage({
     destination: async function (req, file, cb) {
         const uploadDir = path.join(__dirname, '..', 'uploads', 'course-thumbnails');
         
-        // Ensure directory exists before upload
         await ensureDirectoryExists(uploadDir);
         
         cb(null, uploadDir);
@@ -84,9 +76,7 @@ const thumbnailStorage = multer.diskStorage({
     }
 });
 
-// Multer file filter for images
 const thumbnailFileFilter = (req, file, cb) => {
-    // Accept images only
     if (!file.originalname.match(/\.(jpg|jpeg|png|gif)$/)) {
         req.fileValidationError = 'Only image files are allowed!';
         return cb(new Error('Only image files are allowed!'), false);
@@ -97,7 +87,7 @@ const thumbnailFileFilter = (req, file, cb) => {
 const thumbnailUpload = multer({
     storage: thumbnailStorage,
     fileFilter: thumbnailFileFilter,
-    limits: { fileSize: 5 * 1024 * 1024 } // 5MB file size limit
+    limits: { fileSize: 10 * 1024 * 1024 } 
 });
 
 exports.createCourse = [
@@ -482,7 +472,6 @@ exports.getCourseById = async (req, res) => {
 // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 // const jwt = require('jsonwebtoken');
 // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
-
 // const jwt = require('jsonwebtoken');
 // const stripe = require('stripe')(process.env.STRIPE_SECRET_KEY);
 
@@ -500,7 +489,9 @@ exports.enrollInCourse = async (req, res) => {
         // Check if the user is already enrolled
         const enrollment = await Enrollment.findOne({ course: courseId, user: userId });
         if (enrollment) {
-            return res.status(400).json({ message: 'User already enrolled in this course' });
+            toast.error("You Have already enrolled in this course");
+            return res.status(400).json({ message: 'You Have already enrolled in this course' });
+
         }
 
         // Check if the user is the instructor of the course
@@ -545,5 +536,18 @@ exports.enrollInCourse = async (req, res) => {
     } catch (error) {
         console.error('Enrollment error:', error);
         return res.status(500).json({ message: 'Enrollment failed' });
+    }
+};
+
+exports.getMyCourses = async (req, res) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({ message: 'Unauthorized' });
+        }
+        const enrollments = await Enrollment.find({ user: req.user.id }).populate('course');
+        res.status(200).json(enrollments.map(enrollment => enrollment.course));
+    } catch (error) {
+        console.error('Error fetching courses:', error);
+        res.status(400).json({ message: 'Error fetching courses', error });
     }
 };

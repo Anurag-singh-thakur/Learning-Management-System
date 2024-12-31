@@ -1,4 +1,5 @@
 const express = require('express');
+const {getMyCourses} = require('../controllers/courseController')
 const router = express.Router();
 const { 
     createCourse, 
@@ -47,7 +48,7 @@ router.post('/instructor/create', createCourse);
 router.get('/instructor/courses', getInstructorCourses); 
 router.post('/instructor/:courseId/content', addCourseContent);
 router.delete('/instructor/:courseId', deleteCourse);
-
+router.get('/my-courses', protect, getMyCourses); 
 router.post('/:courseId/enroll', protect, enrollInCourse);
 
 

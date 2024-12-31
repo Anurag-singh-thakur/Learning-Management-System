@@ -19,6 +19,7 @@ import MyCourses from './pages/instructor/MyCourses';
 import AboutPage from './pages/About';
 import ContactPage from './pages/Contact';
 import CourseDetails from './pages/CourseDetails';
+import MyCoursesStudent from './pages/MyCourses';
 
 function App() {
   return (
@@ -34,7 +35,6 @@ function App() {
               containerClassName=""
               containerStyle={{}}
               toastOptions={{
-                // Define default options
                 className: '',
                 duration: 3000,
                 style: {
@@ -68,7 +68,7 @@ function App() {
               <Route path="/pricing" element={<Pricing />} />
               <Route path="/about" element={<AboutPage />} />
               <Route path="/contact" element={<ContactPage />} />
-
+              <Route path='/my-courses' element={<MyCoursesStudent/>}/>
               {/* Protected Routes */}
               <Route path="/profile" element={
                 <ProtectedRoute>

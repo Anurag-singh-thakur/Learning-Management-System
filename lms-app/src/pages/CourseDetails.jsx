@@ -61,7 +61,7 @@ const CourseDetails = () => {
         const token = new URLSearchParams(window.location.search).get('token');
         if (token) {
             try {
-                const decoded = jwt_decode(token); // Updated usage
+                const decoded = jwt_decode(token);
                 if (decoded.courseId !== courseId || decoded.userId !== user.id) {
                     throw new Error('Invalid token');
                 }
@@ -229,7 +229,7 @@ const CourseDetails = () => {
                     <motion.div 
                         initial={{ opacity: 0, x: -50 }}
                         animate={{ opacity: 1, x: 0 }}
-                        transition={{ delay: 0.5 , duration: 0.5 }}
+                        transition={{ delay: 0.5, duration: 0.5 }}
                         className="bg-slate-800/50 p-6 rounded-2xl text-center"
                     >
                         {course.instructor && course.instructor.profilePicture && (
