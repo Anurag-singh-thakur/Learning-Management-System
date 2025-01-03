@@ -43,12 +43,11 @@ router.get('/:courseId', optionalProtect, getCourseById);
 router.get('/trending', getTrendingCourses);
 
 // Protected instructor routes
-router.use('/instructor', protect); // Apply protect middleware to all instructor routes
-router.post('/instructor/create', createCourse);
-router.get('/instructor/courses', getInstructorCourses); 
-router.post('/instructor/:courseId/content', addCourseContent);
-router.delete('/instructor/:courseId', deleteCourse);
-router.get('/my-courses', protect, getMyCourses); 
+router.post('/instructor/create',protect, createCourse);
+router.get('/instructor/courses',protect, getInstructorCourses); 
+router.post('/instructor/:courseId/content',protect, addCourseContent);
+router.delete('/instructor/:courseId',protect, deleteCourse);
+router.get('/c/my-courses/', protect, getMyCourses); 
 router.post('/:courseId/enroll', protect, enrollInCourse);
 
 

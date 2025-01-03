@@ -59,9 +59,10 @@ const CourseDetails = () => {
 
     useEffect(() => {
         const token = new URLSearchParams(window.location.search).get('token');
+        console.log("token,",token)
         if (token) {
             try {
-                const decoded = jwt_decode(token);
+                const decoded = jwtDecode(token);
                 if (decoded.courseId !== courseId || decoded.userId !== user.id) {
                     throw new Error('Invalid token');
                 }

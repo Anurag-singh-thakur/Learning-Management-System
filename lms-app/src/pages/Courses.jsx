@@ -24,29 +24,36 @@ const CourseCard = memo(({ course, index }) => {
             console.log('Course ID:', course._id); 
         
             try {
-                const response = await axios.post(`/api/courses/${course._id}/enroll`, {}, {
+                const response = await fetch(`http://localhost:3008/api/courses/${course._id}/enroll`, {
+                    method: "POST",
+                    credentials: "include",  
                     headers: {
-                        Authorization: `Bearer ${localStorage.getItem('token')}` // Ensure the token is sent
+                        "Authorization": `Bearer ${localStorage.getItem('token')}`  
                     }
                 });
-        
-                if (course.isPaid) {
-                    // const { clientSecret } = response.data; 
-                    // const stripe = await stripePromise;
-                    // const { error } = await stripe.redirectToCheckout({ clientSecret });
-        
-                    // if (error) {
-                    //     console.error('Error redirecting to Stripe:', error);
-                    //     toast.error('Failed to redirect to payment');
-                    // } else {
-                    //     toast.success('Redirecting to payment...');
-                    // }
-        
-                    const {url} = response.data; 
-                    window.location.href = url;
-                } else {
-                    toast.success('Successfully enrolled in the free course!');
-                    navigate(`/courses/${course._id}`); // Redirect to CourseDetails page
+                const data = await response.json();
+                if(data.status===200){
+                    if (course.isPaid) {
+                        // const { clientSecret } = response.data; 
+                        // const stripe = await stripePromise;
+                        // const { error } = await stripe.redirectToCheckout({ clientSecret });
+            
+                        // if (error) {
+                        //     console.error('Error redirecting to Stripe:', error);
+                        //     toast.error('Failed to redirect to payment');
+                        // } else {
+                        //     toast.success('Redirecting to payment...');
+                        // }
+                        
+                        const {url} = response.data; 
+                        window.location.href = url;
+                    } 
+                    else {
+                        navigate(`/courses/${course._id}`); // Redirect to CourseDetails page
+                    }
+                }
+                else{
+                    alert(data.message)
                 }
             } catch (error) {
                 console.error('Error during enrollment:', error);

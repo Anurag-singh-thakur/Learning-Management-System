@@ -8,6 +8,7 @@ const mongoose = require('mongoose');
 const Enrollment = require('../models/Enrollment');
 const express = require('express')
 const app = express()
+const User = require("../models/User")
 const validateInput = (req, res, next) => {
     if (!req.body) {
         return res.status(400).json({ message: 'Invalid request body' });
@@ -477,21 +478,20 @@ exports.getCourseById = async (req, res) => {
 
 exports.enrollInCourse = async (req, res) => {
     const { courseId } = req.params;
-    const userId = req.user.id;
+    const userId = req.user.id; 
 
     try {
         const course = await Course.findById(courseId);
-
         if (!course) {
             return res.status(404).json({ message: 'Course not found' });
         }
 
         // Check if the user is already enrolled
-        const enrollment = await Enrollment.findOne({ course: courseId, user: userId });
-        if (enrollment) {
-            toast.error("You Have already enrolled in this course");
+        const isEnrolled = course.enrolledStudents.includes(userId)
+        // const Course = await Course.findOne({ course: courseId, user: userId });
+        
+        if (isEnrolled) {
             return res.status(400).json({ message: 'You Have already enrolled in this course' });
-
         }
 
         // Check if the user is the instructor of the course
@@ -523,14 +523,16 @@ exports.enrollInCourse = async (req, res) => {
 
             return res.json({ url: session.url });
         } else {
-            // Enroll the user in the free course
-            const newEnrollment = new Enrollment({
-                course: courseId,
-                user: userId,
-                paymentStatus: 'completed'
-            });
-            await newEnrollment.save();
+            //enrollening in course
+            console.log(course)
 
+            course.enrolledStudents.push(userId)
+            await course.save()
+            //now updating the user course
+            //getting user 
+            const getuser = await User.findById(userId);
+            getuser.enrolledCourses.push(courseId);
+            await getuser.save()
             return res.status(200).json({ message: 'Successfully enrolled in the free course' });
         }
     } catch (error) {
@@ -544,8 +546,8 @@ exports.getMyCourses = async (req, res) => {
         if (!req.user) {
             return res.status(401).json({ message: 'Unauthorized' });
         }
-        const enrollments = await Enrollment.find({ user: req.user.id }).populate('course');
-        res.status(200).json(enrollments.map(enrollment => enrollment.course));
+        const user = await User.findById(req.user._id).populate('enrolledCourses');
+        res.status(200).json(user.enrolledCourses);
     } catch (error) {
         console.error('Error fetching courses:', error);
         res.status(400).json({ message: 'Error fetching courses', error });
