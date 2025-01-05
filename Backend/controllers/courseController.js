@@ -521,7 +521,7 @@ exports.enrollInCourse = async (req, res) => {
                 cancel_url: `${process.env.FRONTEND_URL}/courses/${courseId}/cancel`,
             });
 
-            return res.json({ url: session.url });
+            return res.status(200).json({ url: session.url });
         } else {
             //enrollening in course
             console.log(course)

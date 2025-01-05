@@ -32,7 +32,8 @@ const CourseCard = memo(({ course, index }) => {
                     }
                 });
                 const data = await response.json();
-                if(data.status===200){
+                console.log(data,response.ok)
+                if(response.ok){
                     if (course.isPaid) {
                         // const { clientSecret } = response.data; 
                         // const stripe = await stripePromise;
@@ -45,7 +46,7 @@ const CourseCard = memo(({ course, index }) => {
                         //     toast.success('Redirecting to payment...');
                         // }
                         
-                        const {url} = response.data; 
+                        const {url} = data; 
                         window.location.href = url;
                     } 
                     else {
